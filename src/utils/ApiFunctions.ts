@@ -9,14 +9,22 @@ export const api = axios.create({
     },
 });
 
-// this function adds a new user to the database
-export async function addUser(user: User): Promise<boolean> {
+type ApiResult = {
+    success: boolean;
+    errors?: Record<string, string>;
+};
+
+// this function adds a new user
+export async function addUser(user: User): Promise<ApiResult> {
     try {
         const response = await api.post('/users', user);
-        return response.status === 201; // return true if status is 201
+        return { success: response.status === 201 };
     } catch (err) {
+        if (err instanceof AxiosError && err.response?.status === 400) {
+            return { success: false, errors: err.response.data };
+        }
         handleAxiosError(err);
-        return false;
+        return { success: false };
     }
 }
 
@@ -43,24 +51,30 @@ export async function getUserById(id: number): Promise<User> {
 }
 
 // this function updates a user using a PUT request
-export async function updateUser(id: number, user: User): Promise<boolean> {
+export async function updateUser(id: number, user: User): Promise<ApiResult> {
     try {
         const response = await api.put(`/users/${id}`, user);
-        return response.status === 200; // Return true if update is successful
+        return { success: response.status === 204 };
     } catch (err) {
+        if (err instanceof AxiosError && err.response?.status === 400) {
+            return { success: false, errors: err.response.data };
+        }
         handleAxiosError(err);
-        return false;
+        return { success: false };
     }
 }
 
 // this function updates a user partially using a PATCH request
-export async function updatePartialUser(id: number, user: Partial<User>): Promise<boolean> {
+export async function updatePartialUser(id: number, user: Partial<User>): Promise<ApiResult> {
     try {
         const response = await api.patch(`/users/${id}`, user);
-        return response.status === 200; // Return true if update is successful
+        return { success: response.status === 204 };
     } catch (err) {
+        if (err instanceof AxiosError && err.response?.status === 400) {
+            return { success: false, errors: err.response.data };
+        }
         handleAxiosError(err);
-        return false;
+        return { success: false };
     }
 }
 
@@ -68,7 +82,7 @@ export async function updatePartialUser(id: number, user: Partial<User>): Promis
 export async function deleteUserById(id: number): Promise<boolean> {
     try {
         const response = await api.delete(`/users/${id}`);
-        return response.status === 200; // Return true if delete is successful
+        return response.status === 204;
     } catch (err) {
         handleAxiosError(err);
         return false;
